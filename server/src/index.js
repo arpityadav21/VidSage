@@ -2,6 +2,8 @@ import express from "express"
 import dotenv from "dotenv"
 import cors from "cors"
 import cookieParser from "cookie-parser"
+import connectDB from "./db/index.js"
+import userRouter from "./routes/user.routes.js"
 
 dotenv.config()
 
@@ -15,11 +17,7 @@ app.use(cors({
 app.use(express.json())
 app.use(cookieParser())
 
-export { app }
-
-
-
-import connectDB from "./db/index.js"
+app.use("/api/v1/users", userRouter)
 
 connectDB()
     .then(() => {
@@ -30,3 +28,5 @@ connectDB()
     .catch((error) => {
         console.log("Server failed to start:", error)
     })
+
+export { app }
