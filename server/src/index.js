@@ -4,6 +4,7 @@ import cors from "cors"
 import cookieParser from "cookie-parser"
 import connectDB from "./db/index.js"
 import userRouter from "./routes/user.routes.js"
+import videoRouter from "./routes/video.routes.js"
 
 dotenv.config()
 
@@ -18,6 +19,7 @@ app.use(express.json())
 app.use(cookieParser())
 
 app.use("/api/v1/users", userRouter)
+app.use("/api/v1/videos", videoRouter)
 
 connectDB()
     .then(() => {

@@ -38,6 +38,13 @@ const videoSchema = new mongoose.Schema({
         max: 5,
         default: null
     },
+    quiz: [
+    {
+        question: String,
+        options: [String],
+        answer: String
+    }
+    ],
     personalNotes: {
         type: String,
         default: ""
