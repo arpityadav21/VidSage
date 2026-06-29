@@ -59,4 +59,71 @@ const processVideo = asyncHandler(async (req, res) => {
         .json(new ApiResponse(201, video, "Video processed successfully"))
 })
 
-export { processVideo }
+
+const getUserVideos = asyncHandler(async (req, res) => {
+    const videos = await Video.find({ createdBy: req.user._id })
+        .sort({ createdAt: -1 })
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, videos, "Videos fetched successfully"))
+})
+
+
+const getVideoById = asyncHandler(async (req, res) => {
+    const { videoId } = req.params
+
+    const video = await Video.findOne({ 
+        _id: videoId, 
+        createdBy: req.user._id 
+    })
+
+    if (!video) {
+        throw new ApiError(404, "Video not found")
+    }
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, video, "Video fetched successfully"))
+})
+
+
+const updateVideo = asyncHandler(async (req, res) => {
+    const { videoId } = req.params
+    const { tags, rating, personalNotes } = req.body
+
+    const video = await Video.findOneAndUpdate(
+        { _id: videoId, createdBy: req.user._id },
+        { $set: { tags, rating, personalNotes } },
+        { new: true }
+    )
+
+    if (!video) {
+        throw new ApiError(404, "Video not found")
+    }
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, video, "Video updated successfully"))
+})
+
+
+const deleteVideo = asyncHandler(async (req, res) => {
+    const { videoId } = req.params
+
+    const video = await Video.findOneAndDelete({
+        _id: videoId,
+        createdBy: req.user._id
+    })
+
+    if (!video) {
+        throw new ApiError(404, "Video not found")
+    }
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, {}, "Video deleted successfully"))
+})
+
+
+export { processVideo, getUserVideos, getVideoById, updateVideo, deleteVideo }
