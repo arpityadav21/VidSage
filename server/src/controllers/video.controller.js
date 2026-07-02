@@ -12,47 +12,41 @@ const processVideo = asyncHandler(async (req, res) => {
         throw new ApiError(400, "YouTube URL is required")
     }
 
-    // Fetch transcript
     const { videoId, transcript } = await getTranscript(youtubeUrl)
 
-    // Generate all content from Gemini
-    const [summary, notes, chapters, flashcardsRaw, quizRaw] = await Promise.all([
-        generateContent(`Summarize this video transcript in 150-200 words:\n${transcript}`),
-        generateContent(`Generate detailed structured study notes with headings and bullet points from this transcript:\n${transcript}`),
-        generateContent(`Break this transcript into chapters with timestamps if possible. Format as: Chapter 1: [title] - [brief description]:\n${transcript}`),
-        generateContent(`Generate 10 flashcards from this transcript. Return ONLY a JSON array like this: [{"question": "...", "answer": "..."}]. No extra text:\n${transcript}`),
-        generateContent(`Generate a 5 question multiple choice quiz from this transcript. Return ONLY a JSON array like this: [{"question": "...", "options": ["A", "B", "C", "D"], "answer": "A"}]. No extra text:\n${transcript}`)
-    ])
+    const summary = await generateContent(`Summarize this transcript in 100 words:\n${transcript}`)
 
-    // Parse flashcards
-    let flashcards = []
-    try {
-        const cleaned = flashcardsRaw.replace(/```json|```/g, "").trim()
-        flashcards = JSON.parse(cleaned)
-    } catch(e) {
-        flashcards = []
-    }
+const notesAndChapters = await generateContent(`From this transcript, give me:
+NOTES:
+(write bullet point study notes here)
 
-    // Parse quiz 
-    let quiz = []
-    try {
-        const cleaned = quizRaw.replace(/```json|```/g, "").trim()
-        quiz = JSON.parse(cleaned)
-    } catch(e) {
-        quiz = []
-    }
+CHAPTERS:
+(list the main topics covered)
 
-    // Save to MongoDB
+Transcript:\n${transcript}`)
+
+const flashcardsAndQuiz = await generateContent(`From this transcript, return ONLY a JSON object: {"flashcards": [{"question":"...","answer":"..."}], "quiz": [{"question":"...","options":["A","B","C"],"answer":"A"}]}. Generate 5 flashcards and 5 quiz questions. No other text.\n${transcript}`)
+
+let notes = "", chapters = "", flashcards = [], quiz = []
+
+const parts = notesAndChapters.split('CHAPTERS:')
+notes = parts[0].replace('NOTES:', '').trim()
+chapters = parts[1]?.trim() || ""
+try {
+    const p2 = JSON.parse(flashcardsAndQuiz.replace(/```json|```/g, "").trim())
+    flashcards = p2.flashcards || []
+    quiz = p2.quiz || []
+} catch(e) { flashcards = []; quiz = [] }
     const video = await Video.create({
-        youtubeUrl,
-        videoId,
-        summary,
-        notes,
-        chapters,
-        flashcards,
-        quiz,
-        createdBy: req.user._id
-    })
+    youtubeUrl,
+    videoId,
+    summary,
+    notes,
+    chapters,
+    flashcards,
+    quiz,
+    createdBy: req.user._id
+})
 
     return res
         .status(201)

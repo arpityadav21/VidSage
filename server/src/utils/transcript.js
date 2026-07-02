@@ -13,6 +13,7 @@ const getTranscript = async (youtubeUrl) => {
     const transcript = transcriptArr
         .map(item => item.text)
         .join(" ")
+        .slice(0, 8000) 
 
     return { videoId, transcript }
 }
